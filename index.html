@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>身内ジョブルーレット</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E9EDF4; --surface:#F7F9FC; --sunk:#DDE3EE; --ink:#18203A; --muted:#5A6684; --line:#C6CEDD;
+  --accent:#2F5FCB; --accent-ink:#FFFFFF;
+  --tank:#3563C4; --heal:#2F8A4E; --dps:#B83C3C;
+  --tank-soft:#DCE5F8; --heal-soft:#DAEEE1; --dps-soft:#F5DDDD;
+  --focus:#F0A92B;
+  --serif:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",serif;
+  --sans:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#10162A; --surface:#182038; --sunk:#0C1122; --ink:#E8EDF8; --muted:#97A3C0; --line:#2B3555;
+    --accent:#6E97F0; --accent-ink:#0C1122;
+    --tank:#6E97F0; --heal:#5CC383; --dps:#EC7272;
+    --tank-soft:#1E2C52; --heal-soft:#173527; --dps-soft:#3A1D25;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10162A; --surface:#182038; --sunk:#0C1122; --ink:#E8EDF8; --muted:#97A3C0; --line:#2B3555;
+  --accent:#6E97F0; --accent-ink:#0C1122;
+  --tank:#6E97F0; --heal:#5CC383; --dps:#EC7272;
+  --tank-soft:#1E2C52; --heal-soft:#173527; --dps-soft:#3A1D25;
+  color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.65;-webkit-text-size-adjust:100%}
+main{max-width:720px;margin:0 auto;padding:40px 20px 72px}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+
+.masthead{margin-bottom:32px}
+.masthead h1{font-family:var(--serif);font-weight:800;font-size:clamp(2.2rem,7vw,3.3rem);line-height:1.1;margin:0 0 12px;letter-spacing:.04em}
+.masthead p{margin:0;color:var(--muted)}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px 20px;margin-bottom:18px}
+.panel h2{font-size:1.05rem;font-weight:700;margin:0 0 16px}
+
+.roles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.role{border-radius:10px;padding:12px 10px 10px;text-align:center;border-top:4px solid}
+.role[data-role="T"]{background:var(--tank-soft);border-color:var(--tank)}
+.role[data-role="H"]{background:var(--heal-soft);border-color:var(--heal)}
+.role[data-role="D"]{background:var(--dps-soft);border-color:var(--dps)}
+.role .name{font-weight:700;font-size:.95rem}
+.stepper{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px}
+.stepper button{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-size:1.2rem;line-height:1;cursor:pointer}
+.stepper button:disabled{opacity:.35;cursor:default}
+.stepper output{min-width:2ch;font-family:var(--serif);font-weight:800;font-size:1.7rem}
+.total{margin:14px 0 0;color:var(--muted);font-size:.92rem}
+.total b{color:var(--ink);font-size:1.1rem}
+
+.switch{display:flex;align-items:center;gap:10px;margin-top:16px;cursor:pointer;width:fit-content}
+.switch input{width:20px;height:20px;accent-color:var(--accent)}
+
+details.pool{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+details.pool summary{cursor:pointer;font-weight:500}
+.pool-group{margin-top:14px}
+.pool-group h3{font-size:.85rem;font-weight:700;margin:0 0 8px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.chip span{display:inline-block;padding:5px 12px;border-radius:999px;border:1px solid var(--line);font-size:.88rem;color:var(--muted);text-decoration:line-through}
+.chip input:checked + span{color:var(--ink);text-decoration:none;border-color:transparent}
+.chip[data-role="T"] input:checked + span{background:var(--tank-soft)}
+.chip[data-role="H"] input:checked + span{background:var(--heal-soft)}
+.chip[data-role="D"] input:checked + span{background:var(--dps-soft)}
+.chip input:focus-visible + span{outline:3px solid var(--focus);outline-offset:2px}
+
+.players{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.hint{margin:-6px 0 14px;color:var(--muted);font-size:.88rem}
+.prow{display:grid;grid-template-columns:minmax(0,1fr) 128px 132px;gap:8px}
+.prow input,.prow select{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);min-width:0}
+.prow input::placeholder{color:var(--muted);opacity:.7}
+.prow select{border-left-width:5px}
+.player[data-lock="T"] select{border-left-color:var(--tank)}
+.player[data-lock="H"] select{border-left-color:var(--heal)}
+.player[data-lock="D"] select{border-left-color:var(--dps)}
+.jobs-btn{padding:10px 8px;border-radius:8px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-size:.9rem;white-space:nowrap}
+.jobs-btn[data-limited="1"]{border-color:var(--accent);color:var(--accent);font-weight:700}
+.jobs-btn[aria-expanded="true"]{background:var(--sunk)}
+.pjobs{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px 14px;margin-top:8px}
+.pjobs-head{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:.88rem;color:var(--muted)}
+.pjobs-head .grow{flex:1 1 auto}
+.linkbtn{background:none;border:none;padding:2px 0;color:var(--accent);text-decoration:underline;cursor:pointer;font-size:.88rem}
+.pjobs .pool-group{margin-top:10px}
+.member-tools{display:flex;flex-wrap:wrap;gap:4px 20px;margin-top:12px}
+.ghost{background:none;border:none;color:var(--muted);text-decoration:underline;cursor:pointer;padding:4px 0}
+
+.go{margin:28px 0 8px;text-align:center}
+.start{appearance:none;border:none;background:var(--accent);color:var(--accent-ink);font-family:var(--serif);font-weight:800;font-size:1.5rem;letter-spacing:.2em;padding:16px 0;width:min(100%,360px);border-radius:999px;cursor:pointer;box-shadow:0 6px 0 color-mix(in srgb,var(--accent) 55%,#000)}
+.start:active{transform:translateY(3px);box-shadow:0 3px 0 color-mix(in srgb,var(--accent) 55%,#000)}
+.start:disabled{opacity:.5;cursor:default}
+.err{color:var(--dps);min-height:1.6em;margin:12px 0 0;font-size:.92rem}
+
+#result{margin-top:28px}
+#result h2{font-family:var(--serif);font-weight:800;font-size:1.6rem;margin:0 0 14px}
+.board{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);border-left:6px solid;border-radius:10px;padding:12px 16px}
+.row[data-role="T"]{border-left-color:var(--tank)}
+.row[data-role="H"]{border-left-color:var(--heal)}
+.row[data-role="D"]{border-left-color:var(--dps)}
+.badge{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:.85rem;color:#fff}
+.row[data-role="T"] .badge{background:var(--tank)}
+.row[data-role="H"] .badge{background:var(--heal)}
+.row[data-role="D"] .badge{background:var(--dps)}
+:root[data-theme="dark"] .badge{color:#0C1122}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .badge{color:#0C1122}}
+.pname{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.job{text-align:right;line-height:1.2}
+.job .ja{font-family:var(--serif);font-weight:800;font-size:1.35rem;display:block}
+.job .en{font-size:.72rem;color:var(--muted);letter-spacing:.08em}
+.row.spinning .ja,.row.spinning .pname{opacity:.55}
+.row.landed{animation:land .32s ease-out}
+@keyframes land{0%{transform:scale(1.03)}100%{transform:scale(1)}}
+
+.share{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.share button{flex:1 1 160px;padding:12px 16px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-weight:700;cursor:pointer}
+.share button.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.share button:disabled{opacity:.5;cursor:default}
+.share-msg{min-height:1.6em;margin:10px 0 0;font-size:.9rem;color:var(--muted)}
+figure{margin:18px 0 0}
+figure img{display:block;width:100%;max-width:100%;border-radius:10px;border:1px solid var(--line)}
+figcaption{font-size:.82rem;color:var(--muted);margin-top:8px}
+
+@media (max-width:520px){
+  .prow{grid-template-columns:1fr 1fr}
+  .prow input{grid-column:1 / -1}
+  .role .name{font-size:.85rem}
+}
+.lockmark{font-size:.7rem;color:var(--muted);margin-left:6px;font-weight:400}
+@media (prefers-reduced-motion:reduce){
+  .row.landed{animation:none}
+}
+</style>
+</head>
+<body>
+<main>
+  <header class="masthead">
+    <h1>ジョブルーレット</h1>
+    <p>名前を入れてスタート。誰がどのロールになるかも、ジョブも、まとめてランダムで決まります。</p>
+  </header>
+
+  <section class="panel" aria-labelledby="comp-h">
+    <h2 id="comp-h">ロール構成</h2>
+    <div class="roles" id="roles"></div>
+    <p class="total">合計 <b id="total">8</b> 人（最大24人）</p>
+    <label class="switch"><input type="checkbox" id="dup"> 同じジョブの重複を許可する</label>
+    <details class="pool">
+      <summary>抽選に入れるジョブを選ぶ</summary>
+      <div id="pool"></div>
+    </details>
+  </section>
+
+  <section class="panel" aria-labelledby="mem-h">
+    <h2 id="mem-h">メンバー</h2>
+    <p class="hint">ロールを固定したい人は「おまかせ」を変更。使えるジョブを絞りたい人は「ジョブ」から選べます。</p>
+    <ul class="players" id="players"></ul>
+    <div class="member-tools">
+      <button type="button" class="ghost" id="clearNames">名前をすべて消す</button>
+      <button type="button" class="ghost" id="clearPersonal">ロール固定・ジョブ設定をリセット</button>
+    </div>
+  </section>
+
+  <div class="go">
+    <button type="button" class="start" id="start">スタート</button>
+    <p class="err" id="err" role="alert"></p>
+  </div>
+
+  <section id="result" hidden aria-labelledby="res-h">
+    <h2 id="res-h">結果</h2>
+    <ol class="board" id="board"></ol>
+    <div class="share">
+      <button type="button" class="primary" id="saveImg" disabled>画像を保存</button>
+      <button type="button" id="copyImg" disabled>画像をコピー</button>
+      <button type="button" id="again">もう一回</button>
+    </div>
+    <p class="share-msg" id="shareMsg" aria-live="polite"></p>
+    <figure id="previewWrap" hidden>
+      <img id="preview" alt="ルーレット結果の画像">
+      <figcaption>この画像を長押し（PCは右クリック）しても保存できます。</figcaption>
+    </figure>
+  </section>
+</main>
+
+<script>
+(function(){
+  "use strict";
+
+  const JOBS = {
+    T: [["ナイト","PLD"],["戦士","WAR"],["暗黒騎士","DRK"],["ガンブレイカー","GNB"]],
+    H: [["白魔道士","WHM"],["学者","SCH"],["占星術師","AST"],["賢者","SGE"]],
+    D: [["モンク","MNK"],["竜騎士","DRG"],["忍者","NIN"],["侍","SAM"],["リーパー","RPR"],["ヴァイパー","VPR"],
+        ["吟遊詩人","BRD"],["機工士","MCH"],["踊り子","DNC"],
+        ["黒魔道士","BLM"],["召喚士","SMN"],["赤魔道士","RDM"],["ピクトマンサー","PCT"]]
+  };
+  const ROLE_NAME = {T:"タンク",H:"ヒーラー",D:"DPS"};
+  const ROLE_ORDER = ["T","H","D"];
+  const MAX = 24;
+  const KEY = "miuchi-job-roulette:v2";
+
+  let state = {counts:{T:2,H:2,D:4}, players:[], dup:false, off:[]};
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (saved && saved.counts) state = Object.assign(state, saved);
+    else {
+      const old = JSON.parse(localStorage.getItem("miuchi-job-roulette:v1") || "null");
+      if (old && old.counts) {
+        state.counts = old.counts; state.dup = !!old.dup; state.off = old.off || [];
+        state.players = (old.names || []).map(n => ({name:n, lock:"", off:[]}));
+      }
+    }
+  } catch(e) {}
+  function persist(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e) {} }
+
+  const $ = id => document.getElementById(id);
+  const total = () => state.counts.T + state.counts.H + state.counts.D;
+  const rand = n => Math.floor(Math.random() * n);
+  function shuffle(a){ for (let i = a.length - 1; i > 0; i--) { const j = rand(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  const pool = r => JOBS[r].filter(j => !state.off.includes(j[1]));
+  const P = i => state.players[i];
+  const displayName = i => ((P(i) && P(i).name) || "").trim() || ("プレイヤー" + (i + 1));
+  // その人がそのロールで使えるジョブ（全体設定 ∩ 個人設定）
+  const allowed = (i, r) => pool(r).filter(j => !P(i).off.includes(j[1]));
+  const visibleRoles = i => P(i).lock ? [P(i).lock] : ROLE_ORDER;
+  function ensurePlayers(){
+    while (state.players.length < total()) state.players.push({name:"", lock:"", off:[]});
+  }
+
+  /* ---------- ロール構成 ---------- */
+  function renderRoles(){
+    const wrap = $("roles"); wrap.innerHTML = "";
+    ROLE_ORDER.forEach(r => {
+      const d = document.createElement("div");
+      d.className = "role"; d.dataset.role = r;
+      d.innerHTML = '<div class="name">' + ROLE_NAME[r] + '</div>' +
+        '<div class="stepper"><button type="button" aria-label="' + ROLE_NAME[r] + 'を1人減らす">−</button>' +
+        '<output aria-live="polite">' + state.counts[r] + '</output>' +
+        '<button type="button" aria-label="' + ROLE_NAME[r] + 'を1人増やす">＋</button></div>';
+      const [minus, plus] = d.querySelectorAll("button");
+      minus.disabled = state.counts[r] <= 0;
+      plus.disabled = total() >= MAX;
+      minus.onclick = () => { state.counts[r]--; changed(); };
+      plus.onclick = () => { state.counts[r]++; changed(); };
+      wrap.appendChild(d);
+    });
+    $("total").textContent = total();
+  }
+
+  /* ---------- 全体のジョブ選択 ---------- */
+  function chipGroup(r, isOn, onToggle){
+    const g = document.createElement("div"); g.className = "pool-group";
+    const h = document.createElement("h3"); h.textContent = ROLE_NAME[r]; g.appendChild(h);
+    const chips = document.createElement("div"); chips.className = "chips";
+    return {g, chips, add(ja, en){
+      const l = document.createElement("label"); l.className = "chip"; l.dataset.role = r;
+      const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = isOn(en);
+      cb.onchange = () => onToggle(en, cb.checked);
+      const s = document.createElement("span"); s.textContent = ja;
+      l.append(cb, s); chips.appendChild(l);
+    }, done(){ g.appendChild(chips); return g; }};
+  }
+
+  function renderPool(){
+    const wrap = $("pool"); wrap.innerHTML = "";
+    ROLE_ORDER.forEach(r => {
+      const cg = chipGroup(r, en => !state.off.includes(en), (en, on) => {
+        state.off = on ? state.off.filter(x => x !== en) : state.off.concat(en);
+        persist(); $("err").textContent = ""; renderPlayers();
+      });
+      JOBS[r].forEach(([ja, en]) => cg.add(ja, en));
+      wrap.appendChild(cg.done());
+    });
+  }
+
+  /* ---------- メンバー ---------- */
+  const openPanels = new Set();
+
+  function jobsLabel(i){
+    const roles = visibleRoles(i);
+    const all = roles.reduce((n, r) => n + pool(r).length, 0);
+    const mine = roles.reduce((n, r) => n + allowed(i, r).length, 0);
+    return {text: mine === all ? "ジョブ：すべて" : "ジョブ：" + mine + "つ", limited: mine !== all};
+  }
+
+  function renderPanel(i, panel){
+    panel.innerHTML = "";
+    const head = document.createElement("div"); head.className = "pjobs-head";
+    const t = document.createElement("span"); t.className = "grow";
+    t.textContent = displayName(i) + "が使えるジョブ";
+    const allBtn = document.createElement("button"); allBtn.type = "button"; allBtn.className = "linkbtn"; allBtn.textContent = "すべて選ぶ";
+    const noneBtn = document.createElement("button"); noneBtn.type = "button"; noneBtn.className = "linkbtn"; noneBtn.textContent = "すべて外す";
+    const roles = visibleRoles(i);
+    allBtn.onclick = () => {
+      const ens = roles.flatMap(r => JOBS[r].map(j => j[1]));
+      P(i).off = P(i).off.filter(x => !ens.includes(x)); persist(); renderPlayers();
+    };
+    noneBtn.onclick = () => {
+      const ens = roles.flatMap(r => pool(r).map(j => j[1]));
+      P(i).off = Array.from(new Set(P(i).off.concat(ens))); persist(); renderPlayers();
+    };
+    head.append(t, allBtn, noneBtn); panel.appendChild(head);
+    roles.forEach(r => {
+      const list = pool(r); if (!list.length) return;
+      const cg = chipGroup(r, en => !P(i).off.includes(en), (en, on) => {
+        P(i).off = on ? P(i).off.filter(x => x !== en) : P(i).off.concat(en);
+        persist(); $("err").textContent = "";
+        const lab = jobsLabel(i), btn = panel.parentNode.querySelector(".jobs-btn");
+        btn.textContent = lab.text; btn.dataset.limited = lab.limited ? "1" : "0";
+      });
+      list.forEach(([ja, en]) => cg.add(ja, en));
+      panel.appendChild(cg.done());
+    });
+  }
+
+  function renderPlayers(){
+    ensurePlayers();
+    const n = total();
+    const ul = $("players");
+    const ae = document.activeElement;
+    const focusKey = ae && ae.dataset && ae.dataset.fk ? ae.dataset.fk : null;
+    ul.innerHTML = "";
+    for (let i = 0; i < n; i++) {
+      const p = P(i);
+      const li = document.createElement("li"); li.className = "player"; li.dataset.lock = p.lock || "";
+      const row = document.createElement("div"); row.className = "prow";
+
+      const inp = document.createElement("input");
+      inp.type = "text"; inp.maxLength = 20; inp.value = p.name || "";
+      inp.placeholder = "プレイヤー" + (i + 1);
+      inp.setAttribute("aria-label", (i + 1) + "人目の名前");
+      inp.dataset.fk = "n" + i;
+      inp.oninput = () => { p.name = inp.value; persist(); };
+
+      const sel = document.createElement("select");
+      sel.setAttribute("aria-label", displayName(i) + "のロール");
+      sel.dataset.fk = "s" + i;
+      [["","おまかせ"],["T","タンク固定"],["H","ヒーラー固定"],["D","DPS固定"]].forEach(([v, t]) => {
+        const o = document.createElement("option"); o.value = v; o.textContent = t; o.selected = (p.lock || "") === v; sel.appendChild(o);
+      });
+      sel.onchange = () => { p.lock = sel.value; persist(); $("err").textContent = ""; renderPlayers(); };
+
+      const btn = document.createElement("button"); btn.type = "button"; btn.className = "jobs-btn";
+      btn.dataset.fk = "b" + i;
+      const lab = jobsLabel(i); btn.textContent = lab.text; btn.dataset.limited = lab.limited ? "1" : "0";
+      const panel = document.createElement("div"); panel.className = "pjobs"; panel.id = "pj" + i;
+      btn.setAttribute("aria-controls", panel.id);
+      const open = openPanels.has(i);
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+      panel.hidden = !open;
+      if (open) renderPanel(i, panel);
+      btn.onclick = () => {
+        if (openPanels.has(i)) { openPanels.delete(i); panel.hidden = true; btn.setAttribute("aria-expanded","false"); }
+        else { openPanels.add(i); renderPanel(i, panel); panel.hidden = false; btn.setAttribute("aria-expanded","true"); }
+      };
+
+      row.append(inp, sel, btn); li.append(row, panel); ul.appendChild(li);
+    }
+    if (focusKey) { const f = ul.querySelector('[data-fk="' + focusKey + '"]'); if (f) f.focus(); }
+  }
+
+  function changed(){
+    renderRoles(); renderPlayers(); persist();
+    $("start").disabled = total() === 0;
+    $("err").textContent = "";
+  }
+
+  $("dup").checked = !!state.dup;
+  $("dup").onchange = e => { state.dup = e.target.checked; persist(); $("err").textContent = ""; };
+  $("clearNames").onclick = () => { state.players.forEach(p => p.name = ""); renderPlayers(); persist(); };
+  $("clearPersonal").onclick = () => { state.players.forEach(p => { p.lock = ""; p.off = []; }); openPanels.clear(); renderPlayers(); persist(); $("err").textContent = ""; };
+
+  /* ---------- 抽選 ---------- */
+  function validate(){
+    const n = total();
+    for (const r of ROLE_ORDER) {
+      const locked = [...Array(n).keys()].filter(i => P(i).lock === r).length;
+      if (locked > state.counts[r]) return ROLE_NAME[r] + "固定の人が" + locked + "人いますが、" + ROLE_NAME[r] + "枠は" + state.counts[r] + "人です。";
+      if (state.counts[r] && pool(r).length === 0) return ROLE_NAME[r] + "のジョブが1つも選ばれていません。「抽選に入れるジョブを選ぶ」で追加してください。";
+    }
+    for (let i = 0; i < n; i++) {
+      const roles = (P(i).lock ? [P(i).lock] : ROLE_ORDER).filter(r => state.counts[r] > 0);
+      if (!roles.some(r => allowed(i, r).length)) {
+        return displayName(i) + "が使えるジョブがありません。「ジョブ」から選んでください。";
+      }
+    }
+    return "";
+  }
+
+  // 条件（ロール人数・ロール固定・個人のジョブ・重複なし）を満たす割り当てをランダムに探す
+  function solve(){
+    const n = total();
+    const opts = [...Array(n).keys()].map(i => {
+      const roles = (P(i).lock ? [P(i).lock] : ROLE_ORDER).filter(r => state.counts[r] > 0);
+      return roles.map(r => ({r, jobs: allowed(i, r)})).filter(o => o.jobs.length);
+    });
+    const size = i => opts[i].reduce((s, o) => s + o.jobs.length, 0) + (opts[i].length - 1) * 100;
+    const order = shuffle([...Array(n).keys()]).sort((a, b) => size(a) - size(b));
+    const cap = Object.assign({}, state.counts);
+    const lockedLeft = {T:0, H:0, D:0};
+    order.forEach(i => { if (P(i).lock) lockedLeft[P(i).lock]++; });
+    const used = new Set();
+    const out = new Array(n);
+    let nodes = 0;
+
+    function weightedRoles(list){
+      const rest = list.filter(o => cap[o.r] > 0), res = [];
+      while (rest.length) {
+        let sum = rest.reduce((s, o) => s + cap[o.r], 0), x = Math.random() * sum, k = 0;
+        for (; k < rest.length - 1; k++) { x -= cap[rest[k].r]; if (x < 0) break; }
+        res.push(rest.splice(k, 1)[0]);
+      }
+      return res;
+    }
+
+    function dfs(k){
+      if (k === n) return true;
+      if (++nodes > 300000) throw new Error("limit");
+      const i = order[k];
+      for (const o of weightedRoles(opts[i])) {
+        const r = o.r;
+        if (P(i).lock !== r && cap[r] - 1 < lockedLeft[r]) continue; // 固定の人の枠を残す
+        let cand = o.jobs.filter(j => state.dup || !used.has(j[1]));
+        if (!cand.length) continue;
+        cand = shuffle(cand.slice());
+        if (state.dup) cand = cand.slice(0, 1);
+        for (const j of cand) {
+          cap[r]--; if (P(i).lock) lockedLeft[r]--; if (!state.dup) used.add(j[1]);
+          out[i] = {role:r, name:displayName(i), ja:j[0], en:j[1], locked:!!P(i).lock};
+          if (dfs(k + 1)) return true;
+          cap[r]++; if (P(i).lock) lockedLeft[r]++; if (!state.dup) used.delete(j[1]);
+        }
+      }
+      return false;
+    }
+
+    let ok = false;
+    try { ok = dfs(0); } catch(e) { ok = false; }
+    if (!ok) return null;
+    return shuffle(out.slice()).sort((a, b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role));
+  }
+
+  let current = null, spinning = false, cardBlob = null, cardUrl = null;
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function start(){
+    if (spinning) return;
+    let msg = validate();
+    if (!msg) {
+      current = solve();
+      if (!current) msg = "条件に合う組み合わせが見つかりません。ロール固定や使えるジョブの設定を見直すか、重複を許可してください。";
+    }
+    $("err").textContent = msg;
+    if (msg) return;
+    spinning = true;
+    $("start").disabled = true; $("again").disabled = true;
+    $("saveImg").disabled = true; $("copyImg").disabled = true;
+    $("shareMsg").textContent = ""; $("previewWrap").hidden = true;
+
+    const board = $("board"); board.innerHTML = "";
+    const rows = current.map(res => {
+      const li = document.createElement("li"); li.className = "row"; li.dataset.role = res.role;
+      li.innerHTML = '<span class="badge" aria-hidden="true">' + res.role + '</span><span class="pname"></span><span class="job"><span class="ja"></span><span class="en"></span></span>';
+      board.appendChild(li); return li;
+    });
+    $("result").hidden = false;
+    $("result").scrollIntoView({behavior: reduced ? "auto" : "smooth", block:"start"});
+
+    const allNames = [...Array(total()).keys()].map(displayName);
+    const settle = (li, res) => {
+      li.classList.remove("spinning");
+      const pn = li.querySelector(".pname");
+      pn.textContent = res.name;
+      if (res.locked) { const m = document.createElement("span"); m.className = "lockmark"; m.textContent = "ロール固定"; pn.appendChild(m); }
+      li.querySelector(".ja").textContent = res.ja;
+      li.querySelector(".en").textContent = res.en;
+      li.setAttribute("aria-label", ROLE_NAME[res.role] + "、" + res.name + "、" + res.ja);
+      if (!reduced) li.classList.add("landed");
+    };
+
+    if (reduced) { rows.forEach((li, i) => settle(li, current[i])); finish(); return; }
+
+    rows.forEach(li => li.classList.add("spinning"));
+    const landed = new Set();
+    const timer = setInterval(() => {
+      rows.forEach((li, i) => {
+        if (landed.has(i)) return;
+        const j = pool(current[i].role); const pick = j[rand(j.length)] || ["？","---"];
+        li.querySelector(".pname").textContent = allNames[rand(allNames.length)];
+        li.querySelector(".ja").textContent = pick[0];
+        li.querySelector(".en").textContent = pick[1];
+      });
+    }, 70);
+    rows.forEach((li, i) => setTimeout(() => {
+      landed.add(i); settle(li, current[i]);
+      if (landed.size === rows.length) { clearInterval(timer); finish(); }
+    }, 900 + i * 140));
+  }
+
+  function finish(){
+    spinning = false;
+    $("start").disabled = total() === 0; $("again").disabled = false;
+    buildCard().catch(() => { $("shareMsg").textContent = "画像を作れませんでした。もう一度お試しください。"; });
+  }
+
+  $("start").onclick = start;
+  $("again").onclick = start;
+
+/* ---------- 共有用画像 ---------- */
+  function rr(ctx, x, y, w, h, r){
+    ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function fit(ctx, text, maxW){
+    if (ctx.measureText(text).width <= maxW) return text;
+    let t = text; while (t.length > 1 && ctx.measureText(t + "…").width > maxW) t = t.slice(0, -1);
+    return t + "…";
+  }
+
+  async function buildCard(){
+    const SERIF = '"Shippori Mincho B1", "Hiragino Mincho ProN", serif';
+    const SANS = '"Zen Kaku Gothic New", "Hiragino Sans", sans-serif';
+    const allText = "ジョブルーレット結果身内" + current.map(r => r.name + r.ja).join("");
+    try {
+      await Promise.all([
+        document.fonts.load('800 60px "Shippori Mincho B1"', allText),
+        document.fonts.load('500 34px "Zen Kaku Gothic New"', allText),
+        document.fonts.load('700 26px "Zen Kaku Gothic New"', "THD0123456789/:")
+      ]);
+    } catch(e) {}
+
+    const C = {bg:"#121A2E", plate:"#1D2742", ink:"#EEF2FA", muted:"#94A1BF", T:"#6E97F0", H:"#5CC383", D:"#EC7272"};
+    const W = 1080, P = 64, RH = 100, GAP = 14, HEAD = 190, FOOT = 90;
+    const H = HEAD + current.length * (RH + GAP) - GAP + FOOT;
+    const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+    const ctx = cv.getContext("2d");
+
+    ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+    // 上部のロール色の帯
+    const bw = W / 3; [C.T, C.H, C.D].forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(i * bw, 0, bw + 1, 8); });
+
+    ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = C.ink; ctx.font = "800 64px " + SERIF;
+    ctx.fillText("ジョブルーレット", P, 112);
+    const d = new Date(), z = n => String(n).padStart(2, "0");
+    ctx.fillStyle = C.muted; ctx.font = "500 26px " + SANS;
+    ctx.fillText(d.getFullYear() + "/" + z(d.getMonth() + 1) + "/" + z(d.getDate()) + " " + z(d.getHours()) + ":" + z(d.getMinutes()) + "　" + current.length + "人", P, 156);
+
+    current.forEach((r, i) => {
+      const y = HEAD + i * (RH + GAP);
+      ctx.fillStyle = C.plate; rr(ctx, P, y, W - P * 2, RH, 16); ctx.fill();
+      ctx.save(); rr(ctx, P, y, W - P * 2, RH, 16); ctx.clip();
+      ctx.fillStyle = C[r.role]; ctx.fillRect(P, y, 10, RH); ctx.restore();
+
+      const cx = P + 58, cy = y + RH / 2;
+      ctx.fillStyle = C[r.role]; ctx.beginPath(); ctx.arc(cx, cy, 22, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = C.bg; ctx.font = "700 24px " + SANS; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(r.role, cx, cy + 1);
+
+      ctx.textAlign = "right"; ctx.fillStyle = C.ink; ctx.font = "800 42px " + SERIF;
+      const jobRight = W - P - 32;
+      ctx.fillText(r.ja, jobRight, cy - 8);
+      ctx.fillStyle = C.muted; ctx.font = "700 18px " + SANS;
+      ctx.fillText(r.en, jobRight, cy + 28);
+      ctx.font = "800 42px " + SERIF;
+      const jobW = ctx.measureText(r.ja).width;
+
+      ctx.textAlign = "left"; ctx.fillStyle = C.ink; ctx.font = "500 34px " + SANS;
+      const nameX = cx + 46;
+      ctx.fillText(fit(ctx, r.name, jobRight - jobW - 40 - nameX), nameX, cy + 2);
+      ctx.textBaseline = "alphabetic";
+    });
+
+    ctx.textAlign = "left"; ctx.fillStyle = C.muted; ctx.font = "500 22px " + SANS;
+    ctx.fillText("身内ジョブルーレット", P, H - 38);
+
+    cardBlob = await new Promise(res => cv.toBlob(res, "image/png"));
+    if (!cardBlob) throw new Error("toBlob");
+    if (cardUrl) URL.revokeObjectURL(cardUrl);
+    cardUrl = URL.createObjectURL(cardBlob);
+    $("preview").src = cardUrl; $("previewWrap").hidden = false;
+    $("saveImg").disabled = !saveMode; $("saveImg").hidden = !saveMode;
+    $("copyImg").disabled = !canCopy;
+  }
+
+  /* ---------- 保存・コピー ---------- */
+  // 保存方法：Claude上では downloads 機能、Claude外では通常のダウンロード
+  let downloads = null;
+  const inClaude = !!(window.claude && typeof window.claude.use === "function");
+  let saveMode = inClaude ? null : "plain";
+  const canCopy = !!(navigator.clipboard && window.ClipboardItem);
+  if (!canCopy) $("copyImg").hidden = true;
+  $("saveImg").hidden = !saveMode;
+  if (inClaude) {
+    claude.use("downloads").then(d => {
+      downloads = d; saveMode = d ? "claude" : null;
+      $("saveImg").hidden = !d;
+      if (d && cardBlob && !spinning) $("saveImg").disabled = false;
+    }).catch(() => {});
+  }
+
+  function plainDownload(blob, name){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = name; a.rel = "noopener";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  function fileName(){
+    const d = new Date(), z = n => String(n).padStart(2, "0");
+    return "job-roulette-" + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + "-" + z(d.getHours()) + z(d.getMinutes()) + ".png";
+  }
+
+  $("saveImg").onclick = async () => {
+    if (!saveMode || !cardBlob) return;
+    if (saveMode === "plain") {
+      try { plainDownload(cardBlob, fileName()); $("shareMsg").textContent = "画像を保存しました。"; }
+      catch(e) { $("shareMsg").textContent = "保存できませんでした。下の画像を長押し（右クリック）して保存してください。"; }
+      return;
+    }
+    try {
+      await downloads.save({filename: fileName(), data: cardBlob});
+      $("shareMsg").textContent = "画像を保存しました。";
+    } catch(e) {
+      const code = e && e.code;
+      if (code === "declined") $("shareMsg").textContent = "保存をキャンセルしました。";
+      else if (code === "rate_limited") $("shareMsg").textContent = "少し待ってからもう一度押してください。";
+      else { $("shareMsg").textContent = "ここでは保存できません。下の画像を長押し（右クリック）して保存してください。"; $("saveImg").hidden = true; }
+    }
+  };
+
+  $("copyImg").onclick = async () => {
+    if (!cardBlob) return;
+    try {
+      await navigator.clipboard.write([new ClipboardItem({"image/png": cardBlob})]);
+      $("shareMsg").textContent = "画像をコピーしました。Discordなどに貼り付けできます。";
+    } catch(e) {
+      $("shareMsg").textContent = "この環境ではコピーできません。保存するか、下の画像を長押し（右クリック）してください。";
+    }
+  };
+
+    /* ---------- 初期表示 ---------- */
+  renderRoles(); renderPool(); renderPlayers();
+  $("start").disabled = total() === 0;
+})();
+</script>
+</body>
+</html>
